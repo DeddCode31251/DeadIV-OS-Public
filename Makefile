@@ -31,3 +31,17 @@ $(BOOT_BIN) : $(BOOT_SRC) | prepare # this says how it make build/boot.bin:
   $(NASM) -f bin $(BOOT_SRC) -o $(BOOT_BIN) # This runs NASM, Read the assembly source and save the translated bytes as build/boot.bin
   # - '-f bin' asks for a plain binary file
   # - 'o' tells NASM the name of the output file
+
+  test "$$(wc -c < $(BOOT_BIN))" -eq 512 # This checks that the bootloader is exactly 512 bytes
+  # - 'wc -c' counts bytes
+  # - '-eq 512' means is equal to 512
+  # - The doubled '$$' is make's way of letting the shell receive $ for its own command substituion
+
+  test "$$(od -An -tx1 -j510 -N2 $(BOOT_BIN) | tr -d ' \n')" = "55aa" # If the file isn't exactly 512 bytes, this check fails and Make stops
+  # - 'od' looks at bytes in the file
+  # - '-j510' starts at byte number 510
+  # - 'N2' reads two bytes
+  # - 'tr -d ' \n' remove spaces and newlines from the printed result
+  # - Finaly it checks that bytes are equal to '55aa', they're the special marker BIOS expects at the end of a boot sector
+
+
