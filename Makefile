@@ -66,3 +66,19 @@ $(BOOT_IMG): $(BOOT_BIN) | prepare
 # - 'count=1' copies one 512-byte piece
 # - 'conv=notrunc' keeps dd from shrinking the whole image to 512 bytes
 
+run: $(BOOT_IMG)
+# Before running, make sure the floppy image exists.
+
+	$(QEMU) \
+	    -drive file=$(BOOT_IMG),format=raw,if=floppy \
+	    -boot order=a
+# Start QEMU and tell it to boot from your floppy image:
+# - 'file=$(BOOT_IMG)' gives QEMU the image
+# - 'format=raw' says the image is a plain disk file
+# - 'if=floppy' treats it like a floppy drive
+# - '-boot order=a' tries the floppy drive first
+
+
+clean:
+	rm -rf $(BUILD_DIR)
+# Delete the build folder and the files Make created.
