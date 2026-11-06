@@ -10,8 +10,8 @@ BUILD_DIR := build # Holds the files the makefile creates
 
 # Soruce & generated files
 BOOT_SRC :=  $(BOOT_DIR)/boot.asm # written bootloader code
-BOOT_BIN :=  $(BOOT_BUILD)/boot.bin # is that code after NASM translate it into computer-readable bytes
-BOOT_IMG :=  $(BOOT_BUILD)/boot.img # it acts like a floppy disk 
+BOOT_BIN :=  $(BUILD_DIR)/boot.bin # is that code after NASM translate it into computer-readable bytes
+BOOT_IMG :=  $(BUILD_DIR)/boot.img # it acts like a floppy disk 
 
 # 1.44 MB
 FLOPPY_SECTORS := 2880 # floppy disk is split into little pieces called sectors. This says the prtetend floppy has 2880 sectors, each one is 512 bytes
@@ -44,4 +44,25 @@ $(BOOT_BIN) : $(BOOT_SRC) | prepare # this says how it make build/boot.bin:
   # - 'tr -d ' \n' remove spaces and newlines from the printed result
   # - Finaly it checks that bytes are equal to '55aa', they're the special marker BIOS expects at the end of a boot sector
 
+$(BOOT_IMG): $(BOOT_BIN) | prepare
+# Make the floppy image. It needs the bootloader file first.
+# '|' means prepare must run first, so the build folder exists.
+
+	$(DD) if=/dev/zero of=$(BOOT_IMG) \
+	    bs=512 count=$(FLOPPY_SECTORS) status=none
+# Fill the image with zeros:
+# - 'if=/dev/zero' gets the zero bytes
+# - 'of=$(BOOT_IMG)' writes them into build/boot.img
+# - 'bs=512' works in 512-byte pieces
+# - 'count=$(FLOPPY_SECTORS)' writes 2880 pieces
+# - 'status=none' hides dd's progress message
+# - The '\' means the command continues on the next line
+
+	$(DD) if=$(BOOT_BIN) of=$(BOOT_IMG) \
+	    bs=512 count=1 conv=notrunc status=none
+# Copy the bootloader into the first piece of the floppy image:
+# - 'if=$(BOOT_BIN)' reads the bootloader file
+# - 'of=$(BOOT_IMG)' writes it into the image
+# - 'count=1' copies one 512-byte piece
+# - 'conv=notrunc' keeps dd from shrinking the whole image to 512 bytes
 
